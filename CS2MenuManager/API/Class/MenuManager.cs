@@ -109,6 +109,10 @@ public static class MenuManager
 
             ActiveMenus[player.SteamID] = (instance, timer);
 
+            Server.PrintToConsole($"[Menu] Opening '{menu.Title}'");
+            Server.PrintToConsole($"[Menu] Item count: {menu.ItemOptions.Count}");
+            Server.PrintToConsole($"[Menu] Instance type: {instance.GetType().Name}");
+
             instance.Display();
         });
     }

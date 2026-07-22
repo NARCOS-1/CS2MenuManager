@@ -1,9 +1,11 @@
-﻿using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
+﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 using Tomlyn.Model;
 using static CS2MenuManager.API.Class.ConfigManager;
 
@@ -22,13 +24,23 @@ internal static partial class Library
     public static void Freeze(this CCSPlayerController player)
     {
         if (player.PlayerPawn.Value is { } playerPawn)
-            playerPawn.VelocityModifier = 0.0f;
+        {
+            
+            playerPawn.MoveType = MoveType_t.MOVETYPE_OBSOLETE;
+            Utilities.SetStateChanged(playerPawn, "CBaseEntity", "m_MoveType");
+            Schema.GetRef<MoveType_t>(playerPawn.Handle, "CBaseEntity", "m_nActualMoveType") = MoveType_t.MOVETYPE_OBSOLETE;
+            
+        }
     }
 
     public static void Unfreeze(this CCSPlayerController player, float oldModifier)
     {
         if (player.PlayerPawn.Value is { } playerPawn)
-            playerPawn.VelocityModifier = oldModifier;
+        {
+            playerPawn.MoveType = MoveType_t.MOVETYPE_WALK;
+            Utilities.SetStateChanged(playerPawn, "CBaseEntity", "m_MoveType");
+            Schema.GetRef<MoveType_t>(playerPawn.Handle, "CBaseEntity", "m_nActualMoveType") = MoveType_t.MOVETYPE_WALK;
+        }
     }
 
     public static string Localizer(this CCSPlayerController player, string key, params object?[] args)

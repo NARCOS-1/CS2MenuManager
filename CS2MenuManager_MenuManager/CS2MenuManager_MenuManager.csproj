@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<OutputPath>$(ProjectDir)..\BuildOutput\plugins\CS2MenuManager_MenuManager\</OutputPath>
+		<OutputPath>..\BuildOutput\plugins\CS2MenuManager_MenuManager\</OutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
 	
@@ -13,12 +13,29 @@
 		<None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
-	<Target Name="PostBuild" AfterTargets="Build">
-		<ItemGroup>
-			<FilesToDelete Include="$(OutputPath)CS2MenuManager.dll" />
-			<FilesToDelete Include="$(OutputPath)CS2MenuManager.pdb" />
-			<FilesToDelete Include="$(OutputPath)CS2MenuManager.xml" />
-		</ItemGroup>
-		<Delete Files="@(FilesToDelete)" />
+	<!--
+<Target Name="PostBuild" AfterTargets="Build">
+    <ItemGroup>
+        <FilesToDelete Include="$(OutputPath)CS2MenuManager.dll" />
+        <FilesToDelete Include="$(OutputPath)CS2MenuManager.pdb" />
+        <FilesToDelete Include="$(OutputPath)CS2MenuManager.xml" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" />
+</Target>
+-->
+
+	<Target Name="CopyCS2MenuManager" AfterTargets="Build">
+		<Copy SourceFiles="..\BuildOutput\plugins\CS2MenuManager\CS2MenuManager.dll" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+	</Target>
+
+	<Target Name="DeployToServer" AfterTargets="CopyCS2MenuManager">
+		<Exec Command="robocopy &quot;$(OutputPath.TrimEnd('\'))&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\CS2MenuManager_MenuManager&quot; /MIR
+copy /Y &quot;D:\Projects\CS2MenuManager\BuildOutput\plugins\CS2MenuManager\MySqlConnector.dll&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\CS2MenuManager_MenuManager&quot;
+copy /Y &quot;D:\Projects\CS2MenuManager\BuildOutput\plugins\CS2MenuManager\Dapper.dll&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\CS2MenuManager_MenuManager&quot;
+copy /Y &quot;D:\Projects\CS2MenuManager\BuildOutput\plugins\CS2MenuManager\Tomlyn.dll&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\CS2MenuManager_MenuManager&quot;
+copy /Y &quot;D:\Projects\CS2MenuManager\BuildOutput\plugins\CS2MenuManager\CS2MenuManager.dll&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\NarcosSkinServer&quot;
+copy /Y &quot;D:\Projects\CS2MenuManager\BuildOutput\plugins\CS2MenuManager\CS2MenuManager.pdb&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\NarcosSkinServer&quot;
+copy /Y &quot;D:\Projects\CS2MenuManager\BuildOutput\plugins\CS2MenuManager\CS2MenuManager.xml&quot; &quot;D:\CS2Server\server\game\csgo\addons\counterstrikesharp\plugins\NarcosSkinServer&quot;
+exit /B 0" />
 	</Target>
 </Project>

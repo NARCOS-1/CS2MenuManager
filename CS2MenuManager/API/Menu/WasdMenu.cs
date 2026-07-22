@@ -24,8 +24,15 @@ public class WasdMenu(string title, BasePlugin plugin) : BaseMenu(title, plugin)
     /// <param name="time">The duration for which the menu is displayed.</param>
     public override void Display(CCSPlayerController player, int time)
     {
+        Server.PrintToConsole("[Menu] Display() entered");
+
         MenuTime = time;
+
+        Server.PrintToConsole("[Menu] Calling OpenMenu()");
+
         MenuManager.OpenMenu(player, this, null, (p, m) => new WasdMenuInstance(p, m));
+
+        Server.PrintToConsole("[Menu] OpenMenu() returned");
     }
 
     /// <summary>
@@ -60,7 +67,7 @@ public class WasdMenuInstance : BaseMenuInstance
 
     private PlayerButtons OldButton;
     private readonly float OldVelocityModifier;
-
+    private bool Closed;
     /// <summary>
     /// Initializes a new instance of the <see cref="WasdMenuInstance"/> class.
     /// </summary>
@@ -153,9 +160,11 @@ public class WasdMenuInstance : BaseMenuInstance
     /// </summary>
     public override void Close(bool exitSound)
     {
+        Closed = true;
+
         // Save current menu state before closing
         SaveMenuState();
-        
+
         base.Close(exitSound);
         Menu.Plugin.RemoveListener<OnTick>(OnTick);
 
@@ -195,7 +204,7 @@ public class WasdMenuInstance : BaseMenuInstance
         if (!string.IsNullOrEmpty(DisplayString))
             Player.PrintToCenterHtml(DisplayString);
 
-        if (((WasdMenu)Menu).WasdMenu_FreezePlayer)
+        if (!Closed && ((WasdMenu)Menu).WasdMenu_FreezePlayer)
             Player.Freeze();
     }
 
