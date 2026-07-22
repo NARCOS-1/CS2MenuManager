@@ -68,6 +68,14 @@ public class WasdMenuInstance : BaseMenuInstance
     private PlayerButtons OldButton;
     private readonly float OldVelocityModifier;
     private bool Closed;
+
+    // Holding scroll-up/down repeats at a throttled rate instead of requiring a
+    // tap per item. Measured in ticks (not seconds) since OnTick already gives us
+    // a natural, jitter-free counter - no need for a wall-clock timer.
+    private const int ScrollInitialRepeatDelayTicks = 22; // ~0.34s at 64 tick
+    private const int ScrollRepeatIntervalTicks = 8;      // ~0.125s at 64 tick, ~8/sec
+    private int ScrollUpHeldTicks;
+    private int ScrollDownHeldTicks;
     /// <summary>
     /// Initializes a new instance of the <see cref="WasdMenuInstance"/> class.
     /// </summary>
@@ -186,9 +194,21 @@ public class WasdMenuInstance : BaseMenuInstance
     public void OnTick()
     {
         PlayerButtons button = Player.Buttons;
+        WasdMenu wasdMenu = (WasdMenu)Menu;
+
+        ButtonMapping.TryGetValue(wasdMenu.WasdMenu_ScrollUpKey, out PlayerButtons scrollUpBtn);
+        ButtonMapping.TryGetValue(wasdMenu.WasdMenu_ScrollDownKey, out PlayerButtons scrollDownBtn);
+
+        HandleScrollHold(button, scrollUpBtn, ref ScrollUpHeldTicks, ScrollUp);
+        HandleScrollHold(button, scrollDownBtn, ref ScrollDownHeldTicks, ScrollDown);
 
         foreach (KeyValuePair<string, Action> kvp in Buttons)
         {
+            // Scroll keys are handled above (press-to-fire + hold-to-repeat) instead
+            // of the release-edge trigger everything else here still uses.
+            if (kvp.Key == wasdMenu.WasdMenu_ScrollUpKey || kvp.Key == wasdMenu.WasdMenu_ScrollDownKey)
+                continue;
+
             if (!ButtonMapping.TryGetValue(kvp.Key, out PlayerButtons mappedBtn))
                 continue;
 
@@ -204,8 +224,39 @@ public class WasdMenuInstance : BaseMenuInstance
         if (!string.IsNullOrEmpty(DisplayString))
             Player.PrintToCenterHtml(DisplayString);
 
-        if (!Closed && ((WasdMenu)Menu).WasdMenu_FreezePlayer)
+        if (!Closed && wasdMenu.WasdMenu_FreezePlayer)
             Player.Freeze();
+    }
+
+    /// <summary>
+    /// Fires <paramref name="scroll"/> immediately when <paramref name="mappedBtn"/> is
+    /// first pressed, then repeats it at <see cref="ScrollRepeatIntervalTicks"/> while
+    /// held, after an initial <see cref="ScrollInitialRepeatDelayTicks"/> delay.
+    /// </summary>
+    private static void HandleScrollHold(PlayerButtons button, PlayerButtons mappedBtn, ref int heldTicks, Action scroll)
+    {
+        if (mappedBtn == 0)
+            return;
+
+        bool pressed = (button & mappedBtn) != 0;
+
+        if (!pressed)
+        {
+            heldTicks = 0;
+            return;
+        }
+
+        heldTicks++;
+
+        if (heldTicks == 1)
+        {
+            scroll();
+            return;
+        }
+
+        int ticksPastInitialDelay = heldTicks - ScrollInitialRepeatDelayTicks;
+        if (ticksPastInitialDelay >= 0 && ticksPastInitialDelay % ScrollRepeatIntervalTicks == 0)
+            scroll();
     }
 
     /// <summary>
